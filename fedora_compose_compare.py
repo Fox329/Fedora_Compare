@@ -70,15 +70,17 @@ def compare(oldc:str, newc:str) -> None:
 
     """
     import pdb; pdb.set_trace()
+
     """
 
-# Ensure the 'data' directory exists
-if not os.path.exists('data'):
-    os.makedirs('data')
+if __name__ == "__main__":
+    # Ensure the 'data' directory exists
+    if not os.path.exists('data'):
+        os.makedirs('data')
 
-# Downloads composes for comparison
-for compose in [OLD, NEW]:
-    download_compose(compose)
+    # Downloads composes for comparison
+    for compose in [OLD, NEW]:
+        download_compose(compose)
 
-# Compare the two composes
-compare(OLD, NEW)
+    # Compare the two composes
+    compare(OLD, NEW)
