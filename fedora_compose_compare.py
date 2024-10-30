@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from flask import Flask, jsonify
+
 import requests
 import json
 import os
@@ -11,8 +13,11 @@ OLD = "Fedora-41-20241023.n.0"
 NEW = "Fedora-41-20241024.n.0"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("sync", nargs="?")
+parser.add_argument("mode", nargs="?", choices=["sync", "daemon", "compare"])
+parser.add_argument("comp", nargs="?")
+
 args = parser.parse_args()
+app = Flask(__name__)
 
 def figure_composes(days:int=3) -> list[str]:
     """
@@ -52,7 +57,11 @@ def download_compose(compose:str) -> None:
     else:
         print(f"Failed to download rpms.json for {compose}. HTTP status code: {raw.status_code}")
         
-def compare(oldc:str, newc:str) -> None:
+@app.route('/<oldc>:<newc>')
+def compare_endpoint(oldc:str, newc:str):
+    return jsonify(compare(oldc, newc))
+
+def compare(oldc:str, newc:str) -> dict[str:list[str, str]]:
     """
     Compares the specified composes
     """
@@ -60,6 +69,7 @@ def compare(oldc:str, newc:str) -> None:
     new = json.loads(open(f"data/{newc}", "r").read())
 
     results = {}
+    out = {}
 
     for package in old:
         # package.rsplit returns package name
@@ -71,9 +81,13 @@ def compare(oldc:str, newc:str) -> None:
     for package in results:
         if results[package][0] != results[package][1]:
             print(f"{results[package][0]} changed to {results[package][1]}")
+            out[package] = results[package]
+    
+    return out
 
 if __name__ == "__main__":
-    if args.sync:
+    #import pdb; pdb.set_trace()
+    if args.mode == "sync":
         # Ensure the 'data' directory exists
         if not os.path.exists('data'):
             os.makedirs('data')
@@ -81,7 +95,12 @@ if __name__ == "__main__":
         # Downloads composes for comparison
         for compose in figure_composes():
             download_compose(compose)
+    
+    if args.mode == "daemon":
+        app.run()
 
-    # Compare the two composes
-    compare(OLD, NEW)
+    if args.mode == "compare":
+        comparison = args.comp.split(":")
+        compare(comparison[0], comparison[1])
+
 
