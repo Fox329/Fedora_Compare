@@ -4,11 +4,15 @@ import requests
 import json
 import os
 import re
+import argparse
 
 URL = "https://kojipkgs.fedoraproject.org/compose/branched/"
 OLD = "Fedora-41-20241023.n.0"
 NEW = "Fedora-41-20241024.n.0"
 
+parser = argparse.ArgumentParser()
+parser.add_argument("sync", nargs="?")
+args = parser.parse_args()
 
 def figure_composes(days:int=3) -> list[str]:
     """
@@ -63,24 +67,21 @@ def compare(oldc:str, newc:str) -> None:
 
     for package in new:
         results[package.rsplit('-',2)[0]][1] = package
-
+    
     for package in results:
         if results[package][0] != results[package][1]:
             print(f"{results[package][0]} changed to {results[package][1]}")
 
-    """
-    import pdb; pdb.set_trace()
-
-    """
-
 if __name__ == "__main__":
-    # Ensure the 'data' directory exists
-    if not os.path.exists('data'):
-        os.makedirs('data')
+    if args.sync:
+        # Ensure the 'data' directory exists
+        if not os.path.exists('data'):
+            os.makedirs('data')
 
-    # Downloads composes for comparison
-    for compose in [OLD, NEW]:
-        download_compose(compose)
+        # Downloads composes for comparison
+        for compose in figure_composes():
+            download_compose(compose)
 
     # Compare the two composes
     compare(OLD, NEW)
+
